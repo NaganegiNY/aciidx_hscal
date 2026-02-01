@@ -3,15 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IIDX AC旧作HS計算機</title>
+    <title>IIDX 旧作HS計算機</title>
     <style>
+        :root {
+            --theme-color: #86cecb; /* デフォルトはACの青 */
+            --bg-glow: rgba(0, 204, 255, 0.05);
+        }
         body { font-family: 'Hiragino Kaku Gothic ProN', sans-serif; background: #0a0a0c; color: #fff; text-align: center; padding: 10px; }
         .card { background: linear-gradient(145deg, #1a1a1e, #25252b); border-radius: 20px; padding: 20px; max-width: 450px; margin: 0 auto; box-shadow: 0 8px 30px rgba(0,0,0,0.7); border: 1px solid #333; }
+        
+        .mode-switch { display: flex; gap: 10px; margin-bottom: 20px; }
+        .mode-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #444; background: #111; color: #888; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        
+        /* ボタンのアクティブ色 */
+        #btnAC.active { background: #86cecb; color: #000; border-color: #86cecb; box-shadow: 0 0 10px rgba(0,204,255,0.4); }
+        #btnCS.active { background: #ce8689; color: #fff; border-color: #ce8689; box-shadow: 0 0 10px rgba(255,85,0,0.4); }
+
         .input-group { margin-bottom: 12px; text-align: left; }
-        label { font-size: 0.8rem; color: #00ccff; margin-left: 5px; font-weight: bold; }
+        label { font-size: 0.8rem; color: var(--theme-color); margin-left: 5px; font-weight: bold; transition: 0.3s; }
         input, select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 8px; border: 1px solid #444; background: #000; color: #fff; font-size: 1.1rem; box-sizing: border-box; }
-        .result { margin-top: 20px; padding: 15px; border: 2px solid #00ffcc; border-radius: 12px; background: rgba(0, 255, 204, 0.05); }
-        .hs-val { font-size: 2.5rem; color: #00ffcc; font-weight: bold; }
+        	
+        /* 結果表示エリア：ここが動的に変わります */
+        .result { margin-top: 20px; padding: 15px; border: 2px solid var(--theme-color); border-radius: 12px; background: var(--bg-glow); transition: 0.3s; }
+        .hs-val { font-size: 2.5rem; color: var(--theme-color); font-weight: bold; transition: 0.3s; }
+        
         .sud-val { font-size: 1.6rem; color: #ffcc00; margin-top: 5px; }
         .midori-val { font-size: 1.8rem; color: #55ff55; margin-top: 10px; font-weight: bold; border-top: 1px dashed #444; padding-top: 10px; }
         .towel-val { font-size: 1.3rem; color: #ff66aa; margin-top: 5px; font-style: italic; }
@@ -21,18 +36,16 @@
 <body>
 
 <div class="card">
-    <h2 style="margin:0 0 15px 0; color:#00ffcc; font-size: 1.4rem;">IIDX AC旧作HS計算機</h2>
+    <h2 id="title" style="margin:0 0 15px 0; color:var(--theme-color); font-size: 1.4rem; transition: 0.3s;">IIDX 旧作HS計算機</h2>
     
+    <div class="mode-switch">
+        <button id="btnAC" class="mode-btn active" onclick="setPlatform('AC')">AC</button>
+        <button id="btnCS" class="mode-btn" onclick="setPlatform('CS')">CS (家庭用)</button>
+    </div>
+
     <div class="input-group">
         <label>シリーズ</label>
-        <select id="version" onchange="calc()">
-            <option value="1st">1st / substream</option>
-            <option value="2nd">2nd ~ 4th</option>
-            <option value="5th">5th ~ 10th</option>
-            <option value="RED">IIDX RED</option>
-            <option value="HS">HAPPY SKY</option>
-            <option value="DD" selected>DistorteD ~ DJT</option>
-        </select>
+        <select id="version" onchange="calc()"></select>
     </div>
 
     <div style="display: flex; gap: 10px;">
@@ -52,53 +65,89 @@
     </div>
 
     <div class="result">
-        <div style="font-size:0.8rem; opacity:0.8; margin-bottom:5px;">推奨設定</div>
         <div id="resHS" class="hs-val">-</div>
         <div id="resSUD" class="sud-val">-</div>
         <div id="resTowel" class="towel-val"></div>
         <div id="resMidori" class="midori-val">-</div>
     </div>
-
+    
     <div class="info">
         ※緑数字は (1000 - SUD+) / (BPM * 倍率) * 174000 / 1000 で計算しています。<br>
-        実機環境により微差が出る場合があります。
+        実機環境により微差が出る場合があります。©Naganegi_NY
     </div>
 </div>
 
 <script>
-const allHS = [
-    {label: "0.0", mult: 1.00}, {label: "0.5", mult: 1.50}, {label: "1.0", mult: 2.00},
-    {label: "1.5", mult: 2.25}, {label: "2.0", mult: 2.50}, {label: "2.5", mult: 2.75},
-    {label: "3.0", mult: 3.00}, {label: "3.5", mult: 3.25}, {label: "4.0", mult: 3.50},
-    {label: "4.5", mult: 3.75}, {label: "5.0", mult: 4.00}
-];
+let currentPlatform = 'AC';
+
+const hsData = {
+    AC: [
+        { name: "1st / substream", hs: [{l:"0.0", m:1.0}] },
+        { name: "2nd ~ 4th", hs: [{l:"0.0", m:1.0}, {l:"1.0", m:2.0}] },
+        { name: "5th ~ 10th", hs: [{l:"0.0", m:1.0}, {l:"1.0", m:2.0}, {l:"2.0", m:2.5}, {l:"3.0", m:3.0}] },
+        { name: "IIDX RED", hs: [{l:"0.0", m:1.0}, {l:"1.0", m:2.0}, {l:"2.0", m:2.5}, {l:"3.0", m:3.0}, {l:"4.0", m:3.5}] },
+        { name: "HAPPY SKY", hs: [{l:"0.0", m:1.0}, {l:"0.5", m:1.5}, {l:"1.0", m:2.0}, {l:"1.5", m:2.25}, {l:"2.0", m:2.5}, {l:"2.5", m:2.75}, {l:"3.0", m:3.0}, {l:"3.5", m:3.25}, {l:"4.0", m:3.5}] },
+        { name: "DistorteD ~ DJT", hs: [{l:"0.0", m:1.0}, {l:"0.5", m:1.5}, {l:"1.0", m:2.0}, {l:"1.5", m:2.25}, {l:"2.0", m:2.5}, {l:"2.5", m:2.75}, {l:"3.0", m:3.0}, {l:"3.5", m:3.25}, {l:"4.0", m:3.5}, {l:"4.5", m:3.75}, {l:"5.0", m:4.0}] }
+    ],
+    CS: [
+        { name: "3rd style", hs: [{l:"LS 2.0", m:0.33}, {l:"LS 1.0", m:0.66}, {l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:3.0}, {l:"HS 3.0", m:4.0}] },
+        { name: "4th style", hs: [{l:"LS 2.0", m:0.33}, {l:"LS 1.0", m:0.66}, {l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:2.75}, {l:"HS 3.0", m:3.5}] },
+        { name: "5th style", hs: [{l:"LS 1.0", m:0.66}, {l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:2.5}, {l:"HS 3.0", m:3.0}] },
+        { name: "6th style", hs: [{l:"LS 1.0", m:0.66}, {l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:2.5}, {l:"HS 3.0", m:3.0}, {l:"HS 4.0", m:3.5}] },
+        { name: "7th ~ 9th", hs: [{l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:2.5}, {l:"HS 3.0", m:3.0}, {l:"HS 4.0", m:3.5}] },
+        { name: "10th style", hs: [{l:"HS 0.0", m:1.0}, {l:"HS 0.5", m:1.5}, {l:"HS 1.0", m:2.0}, {l:"HS 1.5", m:2.25}, {l:"HS 2.0", m:2.5}, {l:"HS 2.5", m:2.75}, {l:"HS 3.0", m:3.0}, {l:"HS 3.5", m:3.25}, {l:"HS 4.0", m:3.5}] },
+        { name: "RED ~ DistorteD", hs: [{l:"HS 0.0", m:1.0}, {l:"HS 0.5", m:1.5}, {l:"HS 1.0", m:2.0}, {l:"HS 1.5", m:2.25}, {l:"HS 2.0", m:2.5}, {l:"HS 2.5", m:2.75}, {l:"HS 3.0", m:3.0}, {l:"HS 3.5", m:3.25}, {l:"HS 4.0", m:3.5}, {l:"HS 4.5", m:3.75}, {l:"HS 5.0", m:4.0}] }
+    ]
+};
+
+function setPlatform(p) {
+    currentPlatform = p;
+    
+    // テーマカラー切り替え
+    const root = document.documentElement;
+    if (p === 'AC') {
+        root.style.setProperty('--theme-color', '#86cecb');
+        root.style.setProperty('--bg-glow', 'rgba(0, 204, 255, 0.05)');
+    } else {
+        root.style.setProperty('--theme-color', '#ce8689'); // CS用のオレンジ
+        root.style.setProperty('--bg-glow', 'rgba(255, 85, 0, 0.05)');
+    }
+
+    document.getElementById('btnAC').classList.toggle('active', p === 'AC');
+    document.getElementById('btnCS').classList.toggle('active', p === 'CS');
+    
+    const verSelect = document.getElementById('version');
+    verSelect.innerHTML = "";
+    hsData[p].forEach((v, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.innerText = v.name;
+        verSelect.appendChild(opt);
+    });
+    verSelect.selectedIndex = hsData[p].length - 1;
+    calc();
+}
 
 function calc() {
-    const ver = document.getElementById('version').value;
+    const verIdx = document.getElementById('version').value;
+    if (verIdx === "") return;
+    
     const midori = parseFloat(document.getElementById('targetMidori').value);
     const bpm = parseFloat(document.getElementById('bpm').value);
     const baseSud = parseFloat(document.getElementById('baseSud').value);
+    const currentList = hsData[currentPlatform][verIdx];
 
-    let availableHS = [];
-    if (ver === "1st") availableHS = allHS.filter(h => h.label === "0.0");
-    else if (ver === "2nd") availableHS = allHS.filter(h => ["0.0", "1.0"].includes(h.label));
-    else if (ver === "5th") availableHS = allHS.filter(h => ["0.0", "1.0", "2.0", "3.0"].includes(h.label));
-    else if (ver === "RED") availableHS = allHS.filter(h => ["0.0", "1.0", "2.0", "3.0", "4.0"].includes(h.label));
-    else if (ver === "HS") availableHS = allHS.filter(h => h.label !== "4.5" && h.label !== "5.0");
-    else availableHS = allHS;
-
-    let bestHSIdx = -1;
-    let bestSud = 0;
+    let bestHS = null;
     let minDiff = 9999;
+    let finalSud = 0;
 
-    availableHS.forEach((hs, index) => {
-        // SUD+ = 1000 - (目標緑数字 * BPM * 倍率 / 174)
-        let calcSud = 1000 - (midori * bpm * hs.mult / 174);
+    currentList.hs.forEach(hs => {
+        let calcSud = 1000 - (midori * bpm * hs.m / 174);
         let diff = Math.abs(calcSud - baseSud);
         if (calcSud >= 0 && diff < minDiff) {
             minDiff = diff;
-            bestHSIdx = index;
-            bestSud = Math.round(calcSud);
+            bestHS = hs;
+            finalSud = Math.round(calcSud);
         }
     });
 
@@ -107,30 +156,27 @@ function calc() {
     const resTowel = document.getElementById('resTowel');
     const resMidori = document.getElementById('resMidori');
 
-    if (bestHSIdx === -1) {
+    if (!bestHS) {
         resHS.innerText = "速すぎます";
-        resSUD.innerText = "-";
-        resTowel.innerText = "";
-        resMidori.innerText = "";
+        resSUD.innerText = "-"; resTowel.innerText = ""; resMidori.innerText = "";
     } else {
-        const selectedHS = availableHS[bestHSIdx];
-        resHS.innerText = "HS " + selectedHS.label;
-        resSUD.innerText = "SUD+: " + bestSud;
-
-        // 実際の緑数字を再計算して表示
-        // GN = (1000 - SUD) / (BPM * Multiplier) * 174
-        let actualMidori = Math.round((1000 - bestSud) / (bpm * selectedHS.mult) * 174);
+        resHS.innerText = (currentPlatform === 'AC' ? "HS " : "") + bestHS.l;
+        resSUD.innerText = "SUD+: " + finalSud;
+        let actualMidori = Math.round((1000 - finalSud) / (bpm * bestHS.m) * 174);
         resMidori.innerText = "緑数字: " + actualMidori;
 
-        if (["1st", "2nd", "5th", "RED", "HS"].includes(ver)) {
-            resTowel.innerText = "タオル隠し: " + (bestSud / 10).toFixed(1) + "%";
+        const isOldAC = currentPlatform === 'AC' && ["1st / substream", "2nd ~ 4th", "5th ~ 10th", "IIDX RED", "HAPPY SKY"].includes(currentList.name);
+        const isOldCS = currentPlatform === 'CS' && ["3rd style", "4th style", "5th style", "6th style", "7th ~ 9th", "10th style"].includes(currentList.name);
+        
+        if (isOldAC || isOldCS) {
+            resTowel.innerText = "タオル隠し: " + (finalSud / 10).toFixed(1) + "%";
         } else {
             resTowel.innerText = "";
         }
     }
 }
 
-window.onload = calc;
+window.onload = () => setPlatform('AC');
 </script>
 </body>
 </html>
