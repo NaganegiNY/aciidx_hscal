@@ -162,8 +162,22 @@ function selectBestHS() {
     calc();
 }
 
+// 設定値をブラウザに保存する処理
+function saveSettings() {
+    const midori = document.getElementById('targetMidori').value;
+    const baseSud = document.getElementById('baseSud').value;
+    localStorage.setItem('iidx_cfg_midori', midori);
+    localStorage.setItem('iidx_cfg_basesud', baseSud);
+}
+
+// 計算メイン処理
 function calc() {
     const verIdx = document.getElementById('version').value;
+    if (verIdx === "") return;
+    
+    // 入力のたびに設定を自動保存
+    saveSettings();
+
     const midori = parseFloat(document.getElementById('targetMidori').value);
     const bpm = parseFloat(document.getElementById('bpm').value);
     const baseSud = parseFloat(document.getElementById('baseSud').value);
@@ -171,11 +185,17 @@ function calc() {
     const hsContainer = document.getElementById('hsContainer');
     const resSUD = document.getElementById('resSUD'), resTowel = document.getElementById('resTowel'), resMidori = document.getElementById('resMidori');
 
-    let bestHS = null, finalSud = 0;
+    let bestHS = null;
+    let finalSud = 0;
+
     if (currentList.manual) {
-        let html = `<button class="auto-btn" onclick="selectBestHS()">おすすめのHS</button><div class="hs-selector">`;
-        currentList.hs.forEach((h, i) => html += `<button class="hs-opt ${manualHSIdx === i ? 'selected' : ''}" onclick="selectHS(${i})">${h.l}</button>`);
-        hsContainer.innerHTML = html + `</div>`;
+        let html = `<button class="auto-btn" onclick="selectBestHS()">おすすめのHS</button>`;
+        html += `<div class="hs-selector">`;
+        currentList.hs.forEach((h, i) => {
+            html += `<button class="hs-opt ${manualHSIdx === i ? 'selected' : ''}" onclick="selectHS(${i})">${h.l}</button>`;
+        });
+        html += `</div>`;
+        hsContainer.innerHTML = html;
         bestHS = currentList.hs[manualHSIdx];
         finalSud = Math.round(1000 - (midori * bpm * bestHS.m / 174));
     } else {
@@ -183,7 +203,11 @@ function calc() {
         currentList.hs.forEach(hs => {
             let calcSud = 1000 - (midori * bpm * hs.m / 174);
             let diff = Math.abs(calcSud - baseSud);
-            if (calcSud >= 0 && diff < minDiff) { minDiff = diff; bestHS = hs; finalSud = Math.round(calcSud); }
+            if (calcSud >= 0 && diff < minDiff) {
+                minDiff = diff;
+                bestHS = hs;
+                finalSud = Math.round(calcSud);
+            }
         });
         hsContainer.innerText = bestHS ? bestHS.l : "速すぎます";
     }
@@ -194,9 +218,17 @@ function calc() {
     } else {
         resSUD.innerText = "SUD+: " + (finalSud > 1000 ? 1000 : finalSud);
         let actualMidori = Math.round((1000 - finalSud) / (bpm * bestHS.m) * 174);
-        resMidori.innerText = "緑数字: " + actualMidori;
-        const isOld = ["1st style / substream", "2nd ~ 4th style", "5th style", "6th ~ 10th style", "IIDX RED", "HAPPY SKY", "3rd style", "4th style", "5th style", "6th style", "7th ~ 9th style", "10th style"].includes(currentList.name);
-        resTowel.innerText = isOld ? "タオル隠し: " + (finalSud / 10).toFixed(1) + "%" : "";
+        resMidori.innerText = "緑数字: " + (actualMidori < 0 ? "-" : actualMidori);
+
+        const isOldAC = currentPlatform === 'AC' && ["1st style / substream", "2nd ~ 4th style", "5th style", "6th ~ 10th style", "IIDX RED", "HAPPY SKY"].includes(currentList.name);
+        const isOldCS = currentPlatform === 'CS' && ["3rd style", "4th style", "5th style", "6th style", "7th ~ 9th style", "10th style"].includes(currentList.name);
+        
+        if (isOldAC || isOldCS) {
+            let towelVal = (finalSud / 10).toFixed(1);
+            resTowel.innerText = "タオル隠し: " + (towelVal > 100 ? 100 : towelVal) + "%";
+        } else {
+            resTowel.innerText = "";
+        }
     }
 }
 
@@ -220,7 +252,8 @@ function saveHistory() {
         sub: `${hs} / ${sud} ${towel ? '/ ' + towel : ''}`
     };
     history.unshift(item);
-    if(history.length > 5) history.pop(); // 最大5件
+    if(history.length > 5) history.pop(); 
+    localStorage.setItem('iidx_history', JSON.stringify(history));
     renderHistory();
 }
 
@@ -250,10 +283,26 @@ function loadHistory(id) {
 
 function deleteHistory(id) {
     history = history.filter(h => h.id !== id);
+    localStorage.setItem('iidx_history', JSON.stringify(history));
     renderHistory();
 }
 
-window.onload = () => setPlatform('AC');
+// ページ読み込み時の初期化
+window.onload = () => {
+    setPlatform('AC');
+
+    const savedMidori = localStorage.getItem('iidx_cfg_midori');
+    const savedBaseSud = localStorage.getItem('iidx_cfg_basesud');
+    if (savedMidori) document.getElementById('targetMidori').value = savedMidori;
+    if (savedBaseSud) document.getElementById('baseSud').value = savedBaseSud;
+
+    const savedHistory = localStorage.getItem('iidx_history');
+    if (savedHistory) {
+        history = JSON.parse(savedHistory);
+        renderHistory();
+    }
+    calc();
+};
 </script>
 </body>
 </html>
