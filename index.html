@@ -233,23 +233,26 @@ function calc() {
 }
 
 // 履歴機能
+// 選択中のHSインデックスも保存するように修正
 function saveHistory() {
     const verIdx = document.getElementById('version').value;
     const verName = hsData[currentPlatform][verIdx].name;
     const bpm = document.getElementById('bpm').value;
     const sud = document.getElementById('resSUD').innerText;
-    const hs = document.querySelector('.selected')?.innerText || document.getElementById('hsContainer').innerText;
+    const hsElement = document.getElementById('hsContainer');
+    const hsText = document.querySelector('.selected')?.innerText || hsElement.innerText;
     const towel = document.getElementById('resTowel').innerText;
 
     const item = {
         id: Date.now(),
         platform: currentPlatform,
         verIdx: verIdx,
+        manualHSIdx: manualHSIdx, // ★ここを追加：選択中のHSボタンの位置を保存
         bpm: bpm,
         midori: document.getElementById('targetMidori').value,
         baseSud: document.getElementById('baseSud').value,
         text: `[${currentPlatform}] ${verName} / BPM:${bpm}`,
-        sub: `${hs} / ${sud} ${towel ? '/ ' + towel : ''}`
+        sub: `${hsText} / ${sud} ${towel ? '/ ' + towel : ''}`
     };
     history.unshift(item);
     if(history.length > 5) history.pop(); 
@@ -270,14 +273,23 @@ function renderHistory() {
     `).join('');
 }
 
+// 履歴読み込み：保存されたHSインデックスを復元するように修正
 function loadHistory(id) {
     const item = history.find(h => h.id === id);
     if (!item) return;
+
     document.getElementById('targetMidori').value = item.midori;
     document.getElementById('baseSud').value = item.baseSud;
     document.getElementById('bpm').value = item.bpm;
-    setPlatform(item.platform);
+    
+    // プラットフォームとリストの復元
+    currentPlatform = item.platform;
+    updateVersionList(item.platform);
     document.getElementById('version').value = item.verIdx;
+    
+    // ★ここを追加：HSの選択状態を復元
+    manualHSIdx = item.manualHSIdx || 0; 
+    
     calc();
 }
 
