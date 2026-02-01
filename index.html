@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IIDX 旧作HS計算機</title>
+    <title>IIDX 旧作HS,SUD+計算機</title>
     <style>
         :root {
-            --theme-color: #86cecb; /* デフォルトはACの青 */
-            --bg-glow: rgba(0, 204, 255, 0.05);
+            --theme-color: #86cecb;
+            --bg-glow: rgba(134, 206, 203, 0.05);
         }
         body { font-family: 'Hiragino Kaku Gothic ProN', sans-serif; background: #0a0a0c; color: #fff; text-align: center; padding: 10px; }
         .card { background: linear-gradient(145deg, #1a1a1e, #25252b); border-radius: 20px; padding: 20px; max-width: 450px; margin: 0 auto; box-shadow: 0 8px 30px rgba(0,0,0,0.7); border: 1px solid #333; }
@@ -15,18 +15,31 @@
         .mode-switch { display: flex; gap: 10px; margin-bottom: 20px; }
         .mode-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #444; background: #111; color: #888; cursor: pointer; font-weight: bold; transition: 0.3s; }
         
-        /* ボタンのアクティブ色 */
-        #btnAC.active { background: #86cecb; color: #000; border-color: #86cecb; box-shadow: 0 0 10px rgba(0,204,255,0.4); }
-        #btnCS.active { background: #ce8689; color: #fff; border-color: #ce8689; box-shadow: 0 0 10px rgba(255,85,0,0.4); }
+        #btnAC.active { background: #86cecb; color: #000; border-color: #86cecb; box-shadow: 0 0 10px rgba(134,206,203,0.4); }
+        #btnCS.active { background: #ce8689; color: #fff; border-color: #ce8689; box-shadow: 0 0 10px rgba(206,134,137,0.4); }
 
         .input-group { margin-bottom: 12px; text-align: left; }
         label { font-size: 0.8rem; color: var(--theme-color); margin-left: 5px; font-weight: bold; transition: 0.3s; }
         input, select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 8px; border: 1px solid #444; background: #000; color: #fff; font-size: 1.1rem; box-sizing: border-box; }
-        	
-        /* 結果表示エリア：ここが動的に変わります */
-        .result { margin-top: 20px; padding: 15px; border: 2px solid var(--theme-color); border-radius: 12px; background: var(--bg-glow); transition: 0.3s; }
-        .hs-val { font-size: 2.5rem; color: var(--theme-color); font-weight: bold; transition: 0.3s; }
         
+        .result { margin-top: 20px; padding: 15px; border: 2px solid var(--theme-color); border-radius: 12px; background: var(--bg-glow); transition: 0.3s; position: relative; }
+        .hs-val { font-size: 2rem; color: var(--theme-color); font-weight: bold; transition: 0.3s; min-height: 3.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        
+        .hs-selector { display: flex; gap: 8px; justify-content: center; margin: 10px 0; flex-wrap: wrap; }
+        .hs-opt { padding: 8px 12px; border: 1px solid var(--theme-color); border-radius: 5px; background: transparent; color: var(--theme-color); cursor: pointer; font-weight: bold; font-size: 0.9rem; flex: 1; min-width: 70px; transition: 0.2s; }
+        .hs-opt.selected { background: var(--theme-color); color: #000; }
+
+        .auto-btn { width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 6px; border: none; background: linear-gradient(to bottom, #555, #333); color: #fff; cursor: pointer; font-size: 0.8rem; font-weight: bold; border: 1px solid #555; }
+        
+        .save-btn { margin-top: 15px; width: 100%; padding: 10px; background: var(--theme-color); color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+        .history-container { margin-top: 20px; text-align: left; border-top: 1px solid #333; padding-top: 15px; }
+        .history-title { font-size: 0.9rem; color: #888; margin-bottom: 10px; display: block; }
+        .history-item { background: #1a1a1e; border: 1px solid #333; padding: 10px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
+        .history-item:hover { border-color: var(--theme-color); }
+        .history-info { font-size: 0.85rem; line-height: 1.4; }
+        .del-btn { color: #ff4444; padding: 5px 10px; font-size: 1.2rem; cursor: pointer; }
+
         .sud-val { font-size: 1.6rem; color: #ffcc00; margin-top: 5px; }
         .midori-val { font-size: 1.8rem; color: #55ff55; margin-top: 10px; font-weight: bold; border-top: 1px dashed #444; padding-top: 10px; }
         .towel-val { font-size: 1.3rem; color: #ff66aa; margin-top: 5px; font-style: italic; }
@@ -36,7 +49,7 @@
 <body>
 
 <div class="card">
-    <h2 id="title" style="margin:0 0 15px 0; color:var(--theme-color); font-size: 1.4rem; transition: 0.3s;">IIDX 旧作HS計算機</h2>
+    <h2 id="title" style="margin:0 0 15px 0; color:var(--theme-color); font-size: 1.4rem;">IIDX 旧作HS,SUD+計算機</h2>
     
     <div class="mode-switch">
         <button id="btnAC" class="mode-btn active" onclick="setPlatform('AC')">AC</button>
@@ -45,7 +58,7 @@
 
     <div class="input-group">
         <label>シリーズ</label>
-        <select id="version" onchange="calc()"></select>
+        <select id="version" onchange="resetManualHS(); calc();"></select>
     </div>
 
     <div style="display: flex; gap: 10px;">
@@ -65,10 +78,16 @@
     </div>
 
     <div class="result">
-        <div id="resHS" class="hs-val">-</div>
+        <div id="hsContainer" class="hs-val">-</div>
         <div id="resSUD" class="sud-val">-</div>
         <div id="resTowel" class="towel-val"></div>
         <div id="resMidori" class="midori-val">-</div>
+        <button class="save-btn" onclick="saveHistory()">この設定を保存</button>
+    </div>
+
+    <div class="history-container">
+        <span class="history-title">保存された履歴</span>
+        <div id="historyList"></div>
     </div>
     
     <div class="info">
@@ -79,114 +98,109 @@
 
 <script>
 let currentPlatform = 'AC';
+let manualHSIdx = 0;
+let history = [];
 
 const hsData = {
     AC: [
-        { name: "1st / substream", hs: [{l:"0.0", m:1.0}] },
-        { name: "2nd ~ 4th", hs: [{l:"0.0", m:1.0}, {l:"1.0", m:2.0}] },
-        { name: "5th ~ 10th", hs: [{l:"0.0", m:1.0}, {l:"1.0", m:2.0}, {l:"2.0", m:2.5}, {l:"3.0", m:3.0}] },
-        { name: "IIDX RED", hs: [{l:"0.0", m:1.0}, {l:"1.0", m:2.0}, {l:"2.0", m:2.5}, {l:"3.0", m:3.0}, {l:"4.0", m:3.5}] },
-        { name: "HAPPY SKY", hs: [{l:"0.0", m:1.0}, {l:"0.5", m:1.5}, {l:"1.0", m:2.0}, {l:"1.5", m:2.25}, {l:"2.0", m:2.5}, {l:"2.5", m:2.75}, {l:"3.0", m:3.0}, {l:"3.5", m:3.25}, {l:"4.0", m:3.5}] },
-        { name: "DistorteD ~ DJTROOPERS", hs: [{l:"0.0", m:1.0}, {l:"0.5", m:1.5}, {l:"1.0", m:2.0}, {l:"1.5", m:2.25}, {l:"2.0", m:2.5}, {l:"2.5", m:2.75}, {l:"3.0", m:3.0}, {l:"3.5", m:3.25}, {l:"4.0", m:3.5}, {l:"4.5", m:3.75}, {l:"5.0", m:4.0}] }
+        { name: "1st style / substream", hs: [{l:"HS 0.0", m:1.0}] },
+        { name: "2nd ~ 4th style", hs: [{l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}], manual: true },
+        { name: "5th style", hs: [{l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:2.5}, {l:"HS 3.0", m:3.0}], manual: true },
+        { name: "6th ~ 10th style", hs: [{l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:2.5}, {l:"HS 3.0", m:3.0}] },
+        { name: "IIDX RED", hs: [{l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:2.5}, {l:"HS 3.0", m:3.0}, {l:"HS 4.0", m:3.5}] },
+        { name: "HAPPY SKY", hs: [{l:"HS 0.0", m:1.0}, {l:"HS 0.5", m:1.5}, {l:"HS 1.0", m:2.0}, {l:"HS 1.5", m:2.25}, {l:"HS 2.0", m:2.5}, {l:"HS 2.5", m:2.75}, {l:"HS 3.0", m:3.0}, {l:"HS 3.5", m:3.25}, {l:"HS 4.0", m:3.5}] },
+        { name: "DistorteD ~ DJTROOPERS", hs: [{l:"HS 0.0", m:1.0}, {l:"HS 0.5", m:1.5}, {l:"HS 1.0", m:2.0}, {l:"HS 1.5", m:2.25}, {l:"HS 2.0", m:2.5}, {l:"HS 2.5", m:2.75}, {l:"HS 3.0", m:3.0}, {l:"HS 3.5", m:3.25}, {l:"HS 4.0", m:3.5}, {l:"HS 4.5", m:3.75}, {l:"HS 5.0", m:4.0}] }
     ],
     CS: [
-        { name: "3rd style", hs: [{l:"LS 2.0", m:0.33}, {l:"LS 1.0", m:0.66}, {l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:3.0}, {l:"HS 3.0", m:4.0}] },
-        { name: "4th style", hs: [{l:"LS 2.0", m:0.33}, {l:"LS 1.0", m:0.66}, {l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:2.75}, {l:"HS 3.0", m:3.5}] },
-        { name: "5th style", hs: [{l:"LS 1.0", m:0.66}, {l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:2.5}, {l:"HS 3.0", m:3.0}] },
+        { name: "3rd style", hs: [{l:"LS 2.0", m:0.33}, {l:"LS 1.0", m:0.66}, {l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:3.0}, {l:"HS 3.0", m:4.0}], manual: true },
+        { name: "4th style", hs: [{l:"LS 2.0", m:0.33}, {l:"LS 1.0", m:0.66}, {l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:2.75}, {l:"HS 3.0", m:3.5}], manual: true },
+        { name: "5th style", hs: [{l:"LS 1.0", m:0.66}, {l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:2.5}, {l:"HS 3.0", m:3.0}], manual: true },
         { name: "6th style", hs: [{l:"LS 1.0", m:0.66}, {l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:2.5}, {l:"HS 3.0", m:3.0}, {l:"HS 4.0", m:3.5}] },
-        { name: "7th ~ 9th", hs: [{l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:2.5}, {l:"HS 3.0", m:3.0}, {l:"HS 4.0", m:3.5}] },
+        { name: "7th ~ 9th style", hs: [{l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:2.5}, {l:"HS 3.0", m:3.0}, {l:"HS 4.0", m:3.5}] },
         { name: "10th style", hs: [{l:"HS 0.0", m:1.0}, {l:"HS 0.5", m:1.5}, {l:"HS 1.0", m:2.0}, {l:"HS 1.5", m:2.25}, {l:"HS 2.0", m:2.5}, {l:"HS 2.5", m:2.75}, {l:"HS 3.0", m:3.0}, {l:"HS 3.5", m:3.25}, {l:"HS 4.0", m:3.5}] },
         { name: "IIDX RED ~ DistorteD", hs: [{l:"HS 0.0", m:1.0}, {l:"HS 0.5", m:1.5}, {l:"HS 1.0", m:2.0}, {l:"HS 1.5", m:2.25}, {l:"HS 2.0", m:2.5}, {l:"HS 2.5", m:2.75}, {l:"HS 3.0", m:3.0}, {l:"HS 3.5", m:3.25}, {l:"HS 4.0", m:3.5}, {l:"HS 4.5", m:3.75}, {l:"HS 5.0", m:4.0}] }
     ]
 };
 
+function resetManualHS() { manualHSIdx = 0; }
+
 function setPlatform(p) {
     currentPlatform = p;
-    
-    // テーマカラー切り替え
     const root = document.documentElement;
-    if (p === 'AC') {
-        root.style.setProperty('--theme-color', '#86cecb');
-        root.style.setProperty('--bg-glow', 'rgba(0, 204, 255, 0.05)');
-    } else {
-        root.style.setProperty('--theme-color', '#ce8689'); // CS用のオレンジ
-        root.style.setProperty('--bg-glow', 'rgba(255, 85, 0, 0.05)');
-    }
-
+    root.style.setProperty('--theme-color', p === 'AC' ? '#86cecb' : '#ce8689');
     document.getElementById('btnAC').classList.toggle('active', p === 'AC');
     document.getElementById('btnCS').classList.toggle('active', p === 'CS');
-    
     const verSelect = document.getElementById('version');
     verSelect.innerHTML = "";
     hsData[p].forEach((v, idx) => {
         const opt = document.createElement('option');
-        opt.value = idx;
-        opt.innerText = v.name;
+        opt.value = idx; opt.innerText = v.name;
         verSelect.appendChild(opt);
     });
     verSelect.selectedIndex = hsData[p].length - 1;
+    resetManualHS();
+    calc();
+}
+
+function selectHS(idx) { manualHSIdx = idx; calc(); }
+
+function selectBestHS() {
+    const verIdx = document.getElementById('version').value;
+    const midori = parseFloat(document.getElementById('targetMidori').value);
+    const bpm = parseFloat(document.getElementById('bpm').value);
+    const baseSud = parseFloat(document.getElementById('baseSud').value);
+    const currentList = hsData[currentPlatform][verIdx];
+    let minDiff = 9999, bestIdx = 0;
+    currentList.hs.forEach((hs, idx) => {
+        let calcSud = 1000 - (midori * bpm * hs.m / 174);
+        let diff = Math.abs(calcSud - baseSud);
+        if (calcSud >= 0 && calcSud <= 1000 && diff < minDiff) {
+            minDiff = diff; bestIdx = idx;
+        }
+    });
+    manualHSIdx = bestIdx;
     calc();
 }
 
 function calc() {
     const verIdx = document.getElementById('version').value;
-    if (verIdx === "") return;
-    
     const midori = parseFloat(document.getElementById('targetMidori').value);
     const bpm = parseFloat(document.getElementById('bpm').value);
     const baseSud = parseFloat(document.getElementById('baseSud').value);
     const currentList = hsData[currentPlatform][verIdx];
+    const hsContainer = document.getElementById('hsContainer');
+    const resSUD = document.getElementById('resSUD'), resTowel = document.getElementById('resTowel'), resMidori = document.getElementById('resMidori');
 
-    let bestHS = null;
-    let minDiff = 9999;
-    let finalSud = 0;
+    let bestHS = null, finalSud = 0;
+    if (currentList.manual) {
+        let html = `<button class="auto-btn" onclick="selectBestHS()">おすすめのHS</button><div class="hs-selector">`;
+        currentList.hs.forEach((h, i) => html += `<button class="hs-opt ${manualHSIdx === i ? 'selected' : ''}" onclick="selectHS(${i})">${h.l}</button>`);
+        hsContainer.innerHTML = html + `</div>`;
+        bestHS = currentList.hs[manualHSIdx];
+        finalSud = Math.round(1000 - (midori * bpm * bestHS.m / 174));
+    } else {
+        let minDiff = 9999;
+        currentList.hs.forEach(hs => {
+            let calcSud = 1000 - (midori * bpm * hs.m / 174);
+            let diff = Math.abs(calcSud - baseSud);
+            if (calcSud >= 0 && diff < minDiff) { minDiff = diff; bestHS = hs; finalSud = Math.round(calcSud); }
+        });
+        hsContainer.innerText = bestHS ? bestHS.l : "速すぎます";
+    }
 
-    currentList.hs.forEach(hs => {
-        let calcSud = 1000 - (midori * bpm * hs.m / 174);
-        let diff = Math.abs(calcSud - baseSud);
-        if (calcSud >= 0 && diff < minDiff) {
-            minDiff = diff;
-            bestHS = hs;
-            finalSud = Math.round(calcSud);
-        }
-    });
-
-    const resHS = document.getElementById('resHS');
-    const resSUD = document.getElementById('resSUD');
-    const resTowel = document.getElementById('resTowel');
-    const resMidori = document.getElementById('resMidori');
-
-    if (!bestHS) {
-        resHS.innerText = "速すぎます";
+    if (!bestHS || finalSud < 0) {
+        if (!currentList.manual) hsContainer.innerText = "速すぎます";
         resSUD.innerText = "-"; resTowel.innerText = ""; resMidori.innerText = "";
     } else {
-        resHS.innerText = (currentPlatform === 'AC' ? "HS " : "") + bestHS.l;
-        resSUD.innerText = "SUD+: " + finalSud;
+        resSUD.innerText = "SUD+: " + (finalSud > 1000 ? 1000 : finalSud);
         let actualMidori = Math.round((1000 - finalSud) / (bpm * bestHS.m) * 174);
         resMidori.innerText = "緑数字: " + actualMidori;
-
-        const isOldAC = currentPlatform === 'AC' && ["1st / substream", "2nd ~ 4th", "5th ~ 10th", "IIDX RED", "HAPPY SKY"].includes(currentList.name);
-        const isOldCS = currentPlatform === 'CS' && ["3rd style", "4th style", "5th style", "6th style", "7th ~ 9th", "10th style"].includes(currentList.name);
-        
-        if (isOldAC || isOldCS) {
-            resTowel.innerText = "タオル隠し: " + (finalSud / 10).toFixed(1) + "%";
-        } else {
-            resTowel.innerText = "";
-        }
+        const isOld = ["1st style / substream", "2nd ~ 4th style", "5th style", "6th ~ 10th style", "IIDX RED", "HAPPY SKY", "3rd style", "4th style", "5th style", "6th style", "7th ~ 9th style", "10th style"].includes(currentList.name);
+        resTowel.innerText = isOld ? "タオル隠し: " + (finalSud / 10).toFixed(1) + "%" : "";
     }
 }
 
-// ページ読み込み時に保存されたデータを復元
-window.onload = () => {
-    setPlatform('AC');
-    const savedHistory = localStorage.getItem('iidx_history');
-    if (savedHistory) {
-        history = JSON.parse(savedHistory);
-        renderHistory();
-    }
-};
-
-// 履歴を保存する（localStorageへの書き込みを追加）
+// 履歴機能
 function saveHistory() {
     const verIdx = document.getElementById('version').value;
     const verName = hsData[currentPlatform][verIdx].name;
@@ -205,21 +219,41 @@ function saveHistory() {
         text: `[${currentPlatform}] ${verName} / BPM:${bpm}`,
         sub: `${hs} / ${sud} ${towel ? '/ ' + towel : ''}`
     };
-    
     history.unshift(item);
-    if(history.length > 5) history.pop(); 
-
-    // ブラウザに保存
-    localStorage.setItem('iidx_history', JSON.stringify(history));
+    if(history.length > 5) history.pop(); // 最大5件
     renderHistory();
 }
 
-// 履歴を削除する（保存データの更新を追加）
+function renderHistory() {
+    const list = document.getElementById('historyList');
+    list.innerHTML = history.map(item => `
+        <div class="history-item" onclick="loadHistory(${item.id})">
+            <div class="history-info">
+                <strong>${item.text}</strong><br>
+                <small>${item.sub}</small>
+            </div>
+            <div class="del-btn" onclick="event.stopPropagation(); deleteHistory(${item.id})">×</div>
+        </div>
+    `).join('');
+}
+
+function loadHistory(id) {
+    const item = history.find(h => h.id === id);
+    if (!item) return;
+    document.getElementById('targetMidori').value = item.midori;
+    document.getElementById('baseSud').value = item.baseSud;
+    document.getElementById('bpm').value = item.bpm;
+    setPlatform(item.platform);
+    document.getElementById('version').value = item.verIdx;
+    calc();
+}
+
 function deleteHistory(id) {
     history = history.filter(h => h.id !== id);
-    localStorage.setItem('iidx_history', JSON.stringify(history));
     renderHistory();
 }
+
+window.onload = () => setPlatform('AC');
 </script>
 </body>
 </html>
