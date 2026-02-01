@@ -3,15 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IIDX AC旧作HS計算機</title>
+    <title>IIDX 旧作HS,SUD+計算機</title>
     <style>
+        :root {
+            --theme-color: #86cecb;
+            --bg-glow: rgba(134, 206, 203, 0.05);
+        }
         body { font-family: 'Hiragino Kaku Gothic ProN', sans-serif; background: #0a0a0c; color: #fff; text-align: center; padding: 10px; }
         .card { background: linear-gradient(145deg, #1a1a1e, #25252b); border-radius: 20px; padding: 20px; max-width: 450px; margin: 0 auto; box-shadow: 0 8px 30px rgba(0,0,0,0.7); border: 1px solid #333; }
+        
+        .mode-switch { display: flex; gap: 10px; margin-bottom: 20px; }
+        .mode-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #444; background: #111; color: #888; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        
+        #btnAC.active { background: #86cecb; color: #000; border-color: #86cecb; box-shadow: 0 0 10px rgba(134,206,203,0.4); }
+        #btnCS.active { background: #ce8689; color: #fff; border-color: #ce8689; box-shadow: 0 0 10px rgba(206,134,137,0.4); }
+
         .input-group { margin-bottom: 12px; text-align: left; }
-        label { font-size: 0.8rem; color: #00ccff; margin-left: 5px; font-weight: bold; }
+        label { font-size: 0.8rem; color: var(--theme-color); margin-left: 5px; font-weight: bold; transition: 0.3s; }
         input, select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 8px; border: 1px solid #444; background: #000; color: #fff; font-size: 1.1rem; box-sizing: border-box; }
-        .result { margin-top: 20px; padding: 15px; border: 2px solid #00ffcc; border-radius: 12px; background: rgba(0, 255, 204, 0.05); }
-        .hs-val { font-size: 2.5rem; color: #00ffcc; font-weight: bold; }
+        
+        .result { margin-top: 20px; padding: 15px; border: 2px solid var(--theme-color); border-radius: 12px; background: var(--bg-glow); transition: 0.3s; position: relative; }
+        .hs-val { font-size: 2rem; color: var(--theme-color); font-weight: bold; transition: 0.3s; min-height: 3.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        
+        .hs-selector { display: flex; gap: 8px; justify-content: center; margin: 10px 0; flex-wrap: wrap; }
+        .hs-opt { padding: 8px 12px; border: 1px solid var(--theme-color); border-radius: 5px; background: transparent; color: var(--theme-color); cursor: pointer; font-weight: bold; font-size: 0.9rem; flex: 1; min-width: 70px; transition: 0.2s; }
+        .hs-opt.selected { background: var(--theme-color); color: #000; }
+
+        .auto-btn { width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 6px; border: none; background: linear-gradient(to bottom, #555, #333); color: #fff; cursor: pointer; font-size: 0.8rem; font-weight: bold; border: 1px solid #555; }
+        
+        .save-btn { margin-top: 15px; width: 100%; padding: 10px; background: var(--theme-color); color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+        .history-container { margin-top: 20px; text-align: left; border-top: 1px solid #333; padding-top: 15px; }
+        .history-title { font-size: 0.9rem; color: #888; margin-bottom: 10px; display: block; }
+        .history-item { background: #1a1a1e; border: 1px solid #333; padding: 10px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
+        .history-item:hover { border-color: var(--theme-color); }
+        .history-info { font-size: 0.85rem; line-height: 1.4; }
+        .del-btn { color: #ff4444; padding: 5px 10px; font-size: 1.2rem; cursor: pointer; }
+
         .sud-val { font-size: 1.6rem; color: #ffcc00; margin-top: 5px; }
         .midori-val { font-size: 1.8rem; color: #55ff55; margin-top: 10px; font-weight: bold; border-top: 1px dashed #444; padding-top: 10px; }
         .towel-val { font-size: 1.3rem; color: #ff66aa; margin-top: 5px; font-style: italic; }
@@ -21,18 +49,16 @@
 <body>
 
 <div class="card">
-    <h2 style="margin:0 0 15px 0; color:#00ffcc; font-size: 1.4rem;">IIDX AC旧作HS計算機</h2>
+    <h2 id="title" style="margin:0 0 15px 0; color:var(--theme-color); font-size: 1.4rem;">IIDX 旧作HS,SUD+計算機</h2>
     
+    <div class="mode-switch">
+        <button id="btnAC" class="mode-btn active" onclick="setPlatform('AC')">AC</button>
+        <button id="btnCS" class="mode-btn" onclick="setPlatform('CS')">CS (家庭用)</button>
+    </div>
+
     <div class="input-group">
         <label>シリーズ</label>
-        <select id="version" onchange="calc()">
-            <option value="1st">1st / substream</option>
-            <option value="2nd">2nd ~ 4th</option>
-            <option value="5th">5th ~ 10th</option>
-            <option value="RED">IIDX RED</option>
-            <option value="HS">HAPPY SKY</option>
-            <option value="DD" selected>DistorteD ~ DJT</option>
-        </select>
+        <select id="version" onchange="resetManualHS(); calc();"></select>
     </div>
 
     <div style="display: flex; gap: 10px;">
@@ -52,85 +78,182 @@
     </div>
 
     <div class="result">
-        <div style="font-size:0.8rem; opacity:0.8; margin-bottom:5px;">推奨設定</div>
-        <div id="resHS" class="hs-val">-</div>
+        <div id="hsContainer" class="hs-val">-</div>
         <div id="resSUD" class="sud-val">-</div>
         <div id="resTowel" class="towel-val"></div>
         <div id="resMidori" class="midori-val">-</div>
+        <button class="save-btn" onclick="saveHistory()">この設定を保存</button>
     </div>
 
+    <div class="history-container">
+        <span class="history-title">保存された履歴</span>
+        <div id="historyList"></div>
+    </div>
+    
     <div class="info">
         ※緑数字は (1000 - SUD+) / (BPM * 倍率) * 174000 / 1000 で計算しています。<br>
-        実機環境により微差が出る場合があります。
+        実機環境により微差が出る場合があります。©Naganegi_NY
     </div>
 </div>
 
 <script>
-const allHS = [
-    {label: "0.0", mult: 1.00}, {label: "0.5", mult: 1.50}, {label: "1.0", mult: 2.00},
-    {label: "1.5", mult: 2.25}, {label: "2.0", mult: 2.50}, {label: "2.5", mult: 2.75},
-    {label: "3.0", mult: 3.00}, {label: "3.5", mult: 3.25}, {label: "4.0", mult: 3.50},
-    {label: "4.5", mult: 3.75}, {label: "5.0", mult: 4.00}
-];
+let currentPlatform = 'AC';
+let manualHSIdx = 0;
+let history = [];
 
-function calc() {
-    const ver = document.getElementById('version').value;
+const hsData = {
+    AC: [
+        { name: "1st style / substream", hs: [{l:"HS 0.0", m:1.0}] },
+        { name: "2nd ~ 4th style", hs: [{l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}], manual: true },
+        { name: "5th style", hs: [{l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:2.5}, {l:"HS 3.0", m:3.0}], manual: true },
+        { name: "6th ~ 10th style", hs: [{l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:2.5}, {l:"HS 3.0", m:3.0}] },
+        { name: "IIDX RED", hs: [{l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:2.5}, {l:"HS 3.0", m:3.0}, {l:"HS 4.0", m:3.5}] },
+        { name: "HAPPY SKY", hs: [{l:"HS 0.0", m:1.0}, {l:"HS 0.5", m:1.5}, {l:"HS 1.0", m:2.0}, {l:"HS 1.5", m:2.25}, {l:"HS 2.0", m:2.5}, {l:"HS 2.5", m:2.75}, {l:"HS 3.0", m:3.0}, {l:"HS 3.5", m:3.25}, {l:"HS 4.0", m:3.5}] },
+        { name: "DistorteD ~ DJTROOPERS", hs: [{l:"HS 0.0", m:1.0}, {l:"HS 0.5", m:1.5}, {l:"HS 1.0", m:2.0}, {l:"HS 1.5", m:2.25}, {l:"HS 2.0", m:2.5}, {l:"HS 2.5", m:2.75}, {l:"HS 3.0", m:3.0}, {l:"HS 3.5", m:3.25}, {l:"HS 4.0", m:3.5}, {l:"HS 4.5", m:3.75}, {l:"HS 5.0", m:4.0}] }
+    ],
+    CS: [
+        { name: "3rd style", hs: [{l:"LS 2.0", m:0.33}, {l:"LS 1.0", m:0.66}, {l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:3.0}, {l:"HS 3.0", m:4.0}], manual: true },
+        { name: "4th style", hs: [{l:"LS 2.0", m:0.33}, {l:"LS 1.0", m:0.66}, {l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:2.75}, {l:"HS 3.0", m:3.5}], manual: true },
+        { name: "5th style", hs: [{l:"LS 1.0", m:0.66}, {l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:2.5}, {l:"HS 3.0", m:3.0}], manual: true },
+        { name: "6th style", hs: [{l:"LS 1.0", m:0.66}, {l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:2.5}, {l:"HS 3.0", m:3.0}, {l:"HS 4.0", m:3.5}] },
+        { name: "7th ~ 9th style", hs: [{l:"HS 0.0", m:1.0}, {l:"HS 1.0", m:2.0}, {l:"HS 2.0", m:2.5}, {l:"HS 3.0", m:3.0}, {l:"HS 4.0", m:3.5}] },
+        { name: "10th style", hs: [{l:"HS 0.0", m:1.0}, {l:"HS 0.5", m:1.5}, {l:"HS 1.0", m:2.0}, {l:"HS 1.5", m:2.25}, {l:"HS 2.0", m:2.5}, {l:"HS 2.5", m:2.75}, {l:"HS 3.0", m:3.0}, {l:"HS 3.5", m:3.25}, {l:"HS 4.0", m:3.5}] },
+        { name: "IIDX RED ~ DistorteD", hs: [{l:"HS 0.0", m:1.0}, {l:"HS 0.5", m:1.5}, {l:"HS 1.0", m:2.0}, {l:"HS 1.5", m:2.25}, {l:"HS 2.0", m:2.5}, {l:"HS 2.5", m:2.75}, {l:"HS 3.0", m:3.0}, {l:"HS 3.5", m:3.25}, {l:"HS 4.0", m:3.5}, {l:"HS 4.5", m:3.75}, {l:"HS 5.0", m:4.0}] }
+    ]
+};
+
+function resetManualHS() { manualHSIdx = 0; }
+
+function setPlatform(p) {
+    currentPlatform = p;
+    const root = document.documentElement;
+    root.style.setProperty('--theme-color', p === 'AC' ? '#86cecb' : '#ce8689');
+    document.getElementById('btnAC').classList.toggle('active', p === 'AC');
+    document.getElementById('btnCS').classList.toggle('active', p === 'CS');
+    const verSelect = document.getElementById('version');
+    verSelect.innerHTML = "";
+    hsData[p].forEach((v, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx; opt.innerText = v.name;
+        verSelect.appendChild(opt);
+    });
+    verSelect.selectedIndex = hsData[p].length - 1;
+    resetManualHS();
+    calc();
+}
+
+function selectHS(idx) { manualHSIdx = idx; calc(); }
+
+function selectBestHS() {
+    const verIdx = document.getElementById('version').value;
     const midori = parseFloat(document.getElementById('targetMidori').value);
     const bpm = parseFloat(document.getElementById('bpm').value);
     const baseSud = parseFloat(document.getElementById('baseSud').value);
-
-    let availableHS = [];
-    if (ver === "1st") availableHS = allHS.filter(h => h.label === "0.0");
-    else if (ver === "2nd") availableHS = allHS.filter(h => ["0.0", "1.0"].includes(h.label));
-    else if (ver === "5th") availableHS = allHS.filter(h => ["0.0", "1.0", "2.0", "3.0"].includes(h.label));
-    else if (ver === "RED") availableHS = allHS.filter(h => ["0.0", "1.0", "2.0", "3.0", "4.0"].includes(h.label));
-    else if (ver === "HS") availableHS = allHS.filter(h => h.label !== "4.5" && h.label !== "5.0");
-    else availableHS = allHS;
-
-    let bestHSIdx = -1;
-    let bestSud = 0;
-    let minDiff = 9999;
-
-    availableHS.forEach((hs, index) => {
-        // SUD+ = 1000 - (目標緑数字 * BPM * 倍率 / 174)
-        let calcSud = 1000 - (midori * bpm * hs.mult / 174);
+    const currentList = hsData[currentPlatform][verIdx];
+    let minDiff = 9999, bestIdx = 0;
+    currentList.hs.forEach((hs, idx) => {
+        let calcSud = 1000 - (midori * bpm * hs.m / 174);
         let diff = Math.abs(calcSud - baseSud);
-        if (calcSud >= 0 && diff < minDiff) {
-            minDiff = diff;
-            bestHSIdx = index;
-            bestSud = Math.round(calcSud);
+        if (calcSud >= 0 && calcSud <= 1000 && diff < minDiff) {
+            minDiff = diff; bestIdx = idx;
         }
     });
+    manualHSIdx = bestIdx;
+    calc();
+}
 
-    const resHS = document.getElementById('resHS');
-    const resSUD = document.getElementById('resSUD');
-    const resTowel = document.getElementById('resTowel');
-    const resMidori = document.getElementById('resMidori');
+function calc() {
+    const verIdx = document.getElementById('version').value;
+    const midori = parseFloat(document.getElementById('targetMidori').value);
+    const bpm = parseFloat(document.getElementById('bpm').value);
+    const baseSud = parseFloat(document.getElementById('baseSud').value);
+    const currentList = hsData[currentPlatform][verIdx];
+    const hsContainer = document.getElementById('hsContainer');
+    const resSUD = document.getElementById('resSUD'), resTowel = document.getElementById('resTowel'), resMidori = document.getElementById('resMidori');
 
-    if (bestHSIdx === -1) {
-        resHS.innerText = "速すぎます";
-        resSUD.innerText = "-";
-        resTowel.innerText = "";
-        resMidori.innerText = "";
+    let bestHS = null, finalSud = 0;
+    if (currentList.manual) {
+        let html = `<button class="auto-btn" onclick="selectBestHS()">おすすめのHS</button><div class="hs-selector">`;
+        currentList.hs.forEach((h, i) => html += `<button class="hs-opt ${manualHSIdx === i ? 'selected' : ''}" onclick="selectHS(${i})">${h.l}</button>`);
+        hsContainer.innerHTML = html + `</div>`;
+        bestHS = currentList.hs[manualHSIdx];
+        finalSud = Math.round(1000 - (midori * bpm * bestHS.m / 174));
     } else {
-        const selectedHS = availableHS[bestHSIdx];
-        resHS.innerText = "HS " + selectedHS.label;
-        resSUD.innerText = "SUD+: " + bestSud;
+        let minDiff = 9999;
+        currentList.hs.forEach(hs => {
+            let calcSud = 1000 - (midori * bpm * hs.m / 174);
+            let diff = Math.abs(calcSud - baseSud);
+            if (calcSud >= 0 && diff < minDiff) { minDiff = diff; bestHS = hs; finalSud = Math.round(calcSud); }
+        });
+        hsContainer.innerText = bestHS ? bestHS.l : "速すぎます";
+    }
 
-        // 実際の緑数字を再計算して表示
-        // GN = (1000 - SUD) / (BPM * Multiplier) * 174
-        let actualMidori = Math.round((1000 - bestSud) / (bpm * selectedHS.mult) * 174);
+    if (!bestHS || finalSud < 0) {
+        if (!currentList.manual) hsContainer.innerText = "速すぎます";
+        resSUD.innerText = "-"; resTowel.innerText = ""; resMidori.innerText = "";
+    } else {
+        resSUD.innerText = "SUD+: " + (finalSud > 1000 ? 1000 : finalSud);
+        let actualMidori = Math.round((1000 - finalSud) / (bpm * bestHS.m) * 174);
         resMidori.innerText = "緑数字: " + actualMidori;
-
-        if (["1st", "2nd", "5th", "RED", "HS"].includes(ver)) {
-            resTowel.innerText = "タオル隠し: " + (bestSud / 10).toFixed(1) + "%";
-        } else {
-            resTowel.innerText = "";
-        }
+        const isOld = ["1st style / substream", "2nd ~ 4th style", "5th style", "6th ~ 10th style", "IIDX RED", "HAPPY SKY", "3rd style", "4th style", "5th style", "6th style", "7th ~ 9th style", "10th style"].includes(currentList.name);
+        resTowel.innerText = isOld ? "タオル隠し: " + (finalSud / 10).toFixed(1) + "%" : "";
     }
 }
 
-window.onload = calc;
+// 履歴機能
+function saveHistory() {
+    const verIdx = document.getElementById('version').value;
+    const verName = hsData[currentPlatform][verIdx].name;
+    const bpm = document.getElementById('bpm').value;
+    const sud = document.getElementById('resSUD').innerText;
+    const hs = document.querySelector('.selected')?.innerText || document.getElementById('hsContainer').innerText;
+    const towel = document.getElementById('resTowel').innerText;
+
+    const item = {
+        id: Date.now(),
+        platform: currentPlatform,
+        verIdx: verIdx,
+        bpm: bpm,
+        midori: document.getElementById('targetMidori').value,
+        baseSud: document.getElementById('baseSud').value,
+        text: `[${currentPlatform}] ${verName} / BPM:${bpm}`,
+        sub: `${hs} / ${sud} ${towel ? '/ ' + towel : ''}`
+    };
+    history.unshift(item);
+    if(history.length > 5) history.pop(); // 最大5件
+    renderHistory();
+}
+
+function renderHistory() {
+    const list = document.getElementById('historyList');
+    list.innerHTML = history.map(item => `
+        <div class="history-item" onclick="loadHistory(${item.id})">
+            <div class="history-info">
+                <strong>${item.text}</strong><br>
+                <small>${item.sub}</small>
+            </div>
+            <div class="del-btn" onclick="event.stopPropagation(); deleteHistory(${item.id})">×</div>
+        </div>
+    `).join('');
+}
+
+function loadHistory(id) {
+    const item = history.find(h => h.id === id);
+    if (!item) return;
+    document.getElementById('targetMidori').value = item.midori;
+    document.getElementById('baseSud').value = item.baseSud;
+    document.getElementById('bpm').value = item.bpm;
+    setPlatform(item.platform);
+    document.getElementById('version').value = item.verIdx;
+    calc();
+}
+
+function deleteHistory(id) {
+    history = history.filter(h => h.id !== id);
+    renderHistory();
+}
+
+window.onload = () => setPlatform('AC');
 </script>
 </body>
 </html>
