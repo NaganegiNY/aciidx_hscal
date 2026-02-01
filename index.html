@@ -289,20 +289,52 @@ function deleteHistory(id) {
 
 // ページ読み込み時の初期化
 window.onload = () => {
-    setPlatform('AC');
+    // 1. まずプラットフォームをセット（まだ計算はしない）
+    currentPlatform = 'AC';
+    updateVersionList('AC'); 
 
+    // 2. ブラウザから保存データを取得
     const savedMidori = localStorage.getItem('iidx_cfg_midori');
     const savedBaseSud = localStorage.getItem('iidx_cfg_basesud');
+    const savedHistory = localStorage.getItem('iidx_history');
+
+    // 3. 取得したデータを入力欄に反映
     if (savedMidori) document.getElementById('targetMidori').value = savedMidori;
     if (savedBaseSud) document.getElementById('baseSud').value = savedBaseSud;
-
-    const savedHistory = localStorage.getItem('iidx_history');
     if (savedHistory) {
         history = JSON.parse(savedHistory);
         renderHistory();
     }
+
+    // 4. 全て準備が整ってから初めて計算を実行
     calc();
 };
+
+// setPlatformの中身も少し整理して、初期化時にループしないようにします
+function setPlatform(p) {
+    currentPlatform = p;
+    updateVersionList(p);
+    calc();
+}
+
+// バージョンリストの更新だけを切り分け
+function updateVersionList(p) {
+    const root = document.documentElement;
+    root.style.setProperty('--theme-color', p === 'AC' ? '#86cecb' : '#ce8689');
+    document.getElementById('btnAC').classList.toggle('active', p === 'AC');
+    document.getElementById('btnCS').classList.toggle('active', p === 'CS');
+    
+    const verSelect = document.getElementById('version');
+    verSelect.innerHTML = "";
+    hsData[p].forEach((v, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx; 
+        opt.innerText = v.name;
+        verSelect.appendChild(opt);
+    });
+    verSelect.selectedIndex = hsData[p].length - 1;
+    resetManualHS();
+}
 </script>
 </body>
 </html>
