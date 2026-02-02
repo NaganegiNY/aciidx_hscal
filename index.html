@@ -227,7 +227,7 @@ function calc() {
         // --- バージョン別表示フラグ ---
         // 1. SUD+自体が存在するか（AC: HAPPY SKY以降 / CS: 10th以降）
         const hasSudPlus = (currentPlatform === 'AC' && ["HAPPY SKY", "DistorteD ~ DJTROOPERS"].includes(currentList.name)) ||
-                           (currentPlatform === 'CS' && ["10th style", "IIDX RED ~ DistorteD"].includes(currentList.name));
+                           (currentPlatform === 'CS' && ["IIDX RED ~ DistorteD"].includes(currentList.name));
 
         // 2. 特殊な「%表記」を使うか（AC HAPPY SKYのみ）
         const isHappySkyAC = (currentPlatform === 'AC' && currentList.name === "HAPPY SKY");
