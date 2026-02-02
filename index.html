@@ -162,8 +162,21 @@ function selectBestHS() {
     calc();
 }
 
+// 設定値をブラウザに保存する処理
+function saveSettings() {
+    const midori = document.getElementById('targetMidori').value;
+    const baseSud = document.getElementById('baseSud').value;
+    localStorage.setItem('iidx_cfg_midori', midori);
+    localStorage.setItem('iidx_cfg_basesud', baseSud);
+}
+
+// 計算メイン処理
 function calc() {
     const verIdx = document.getElementById('version').value;
+    if (verIdx === "") return;
+    
+    saveSettings();
+
     const midori = parseFloat(document.getElementById('targetMidori').value);
     const bpm = parseFloat(document.getElementById('bpm').value);
     const baseSud = parseFloat(document.getElementById('baseSud').value);
@@ -171,56 +184,105 @@ function calc() {
     const hsContainer = document.getElementById('hsContainer');
     const resSUD = document.getElementById('resSUD'), resTowel = document.getElementById('resTowel'), resMidori = document.getElementById('resMidori');
 
-    let bestHS = null, finalSud = 0;
+    let bestHS = null;
+    let idealSud = 0;
+    const CONST_VAL = 174;
+
+    // ハイスピード選択ロジック
     if (currentList.manual) {
-        let html = `<button class="auto-btn" onclick="selectBestHS()">おすすめのHS</button><div class="hs-selector">`;
-        currentList.hs.forEach((h, i) => html += `<button class="hs-opt ${manualHSIdx === i ? 'selected' : ''}" onclick="selectHS(${i})">${h.l}</button>`);
-        hsContainer.innerHTML = html + `</div>`;
+        let html = `<button class="auto-btn" onclick="selectBestHS()">おすすめのHS</button>`;
+        html += `<div class="hs-selector">`;
+        currentList.hs.forEach((h, i) => {
+            html += `<button class="hs-opt ${manualHSIdx === i ? 'selected' : ''}" onclick="selectHS(${i})">${h.l}</button>`;
+        });
+        html += `</div>`;
+        hsContainer.innerHTML = html;
         bestHS = currentList.hs[manualHSIdx];
-        finalSud = Math.round(1000 - (midori * bpm * bestHS.m / 174));
+        idealSud = 1000 - (midori * bpm * bestHS.m / CONST_VAL);
     } else {
         let minDiff = 9999;
         currentList.hs.forEach(hs => {
-            let calcSud = 1000 - (midori * bpm * hs.m / 174);
+            let calcSud = 1000 - (midori * bpm * hs.m / CONST_VAL);
             let diff = Math.abs(calcSud - baseSud);
-            if (calcSud >= 0 && diff < minDiff) { minDiff = diff; bestHS = hs; finalSud = Math.round(calcSud); }
+            if (calcSud >= 0 && diff < minDiff) {
+                minDiff = diff;
+                bestHS = hs;
+                idealSud = calcSud;
+            }
         });
         hsContainer.innerText = bestHS ? bestHS.l : "速すぎます";
     }
 
-    if (!bestHS || finalSud < 0) {
+    if (!bestHS || idealSud < 0) {
         if (!currentList.manual) hsContainer.innerText = "速すぎます";
         resSUD.innerText = "-"; resTowel.innerText = ""; resMidori.innerText = "";
     } else {
-        resSUD.innerText = "SUD+: " + (finalSud > 1000 ? 1000 : finalSud);
-        let actualMidori = Math.round((1000 - finalSud) / (bpm * bestHS.m) * 174);
-        resMidori.innerText = "緑数字: " + actualMidori;
-        const isOld = ["1st style / substream", "2nd ~ 4th style", "5th style", "6th ~ 10th style", "IIDX RED", "HAPPY SKY", "3rd style", "4th style", "5th style", "6th style", "7th ~ 9th style", "10th style"].includes(currentList.name);
-        resTowel.innerText = isOld ? "タオル隠し: " + (finalSud / 10).toFixed(1) + "%" : "";
+        // --- 内部的な白数字の決定 ---
+        let finalSud = Math.round(idealSud);
+        if (currentPlatform === 'CS') {
+            let internalPx = Math.floor(idealSud * 0.48);
+            finalSud = Math.ceil(internalPx / 0.48);
+        }
+
+        // --- バージョン別表示フラグ ---
+        // 1. SUD+自体が存在するか（AC: HAPPY SKY以降 / CS: 10th以降）
+        const hasSudPlus = (currentPlatform === 'AC' && ["HAPPY SKY", "DistorteD ~ DJTROOPERS"].includes(currentList.name)) ||
+                           (currentPlatform === 'CS' && ["10th style", "IIDX RED ~ DistorteD"].includes(currentList.name));
+
+        // 2. 特殊な「%表記」を使うか（AC HAPPY SKYのみ）
+        const isHappySkyAC = (currentPlatform === 'AC' && currentList.name === "HAPPY SKY");
+
+        // --- 表示の切り替え ---
+        if (hasSudPlus) {
+            resSUD.style.display = "block";
+            resTowel.style.display = "none";
+            
+            if (isHappySkyAC) {
+                // AC HAPPY SKYのみ %表記
+                resSUD.innerText = "SUD+: " + (finalSud / 10).toFixed(1) + "%";
+            } else {
+                // それ以外のSUD+対応作は 白数字表記
+                resSUD.innerText = "SUD+: " + (finalSud > 1000 ? 1000 : finalSud);
+            }
+        } else {
+            // タオル隠し世代（SUD+なし）
+            resSUD.style.display = "none";
+            resTowel.style.display = "block";
+            let towelVal = (finalSud / 10).toFixed(1);
+            resTowel.innerText = "タオル隠し: " + (towelVal > 100 ? "100.0%" : towelVal + "%");
+        }
+        
+        // 緑数字の表示
+        let actualMidori = Math.round((1000 - finalSud) / (bpm * bestHS.m) * CONST_VAL);
+        resMidori.innerText = "緑数字: " + (actualMidori < 0 ? "-" : actualMidori);
     }
 }
 
 // 履歴機能
+// 選択中のHSインデックスも保存するように修正
 function saveHistory() {
     const verIdx = document.getElementById('version').value;
     const verName = hsData[currentPlatform][verIdx].name;
     const bpm = document.getElementById('bpm').value;
     const sud = document.getElementById('resSUD').innerText;
-    const hs = document.querySelector('.selected')?.innerText || document.getElementById('hsContainer').innerText;
+    const hsElement = document.getElementById('hsContainer');
+    const hsText = document.querySelector('.selected')?.innerText || hsElement.innerText;
     const towel = document.getElementById('resTowel').innerText;
 
     const item = {
         id: Date.now(),
         platform: currentPlatform,
         verIdx: verIdx,
+        manualHSIdx: manualHSIdx, // ★ここを追加：選択中のHSボタンの位置を保存
         bpm: bpm,
         midori: document.getElementById('targetMidori').value,
         baseSud: document.getElementById('baseSud').value,
         text: `[${currentPlatform}] ${verName} / BPM:${bpm}`,
-        sub: `${hs} / ${sud} ${towel ? '/ ' + towel : ''}`
+        sub: `${hsText} / ${sud} ${towel ? '/ ' + towel : ''}`
     };
     history.unshift(item);
-    if(history.length > 5) history.pop(); // 最大5件
+    if(history.length > 5) history.pop(); 
+    localStorage.setItem('iidx_history', JSON.stringify(history));
     renderHistory();
 }
 
@@ -237,23 +299,80 @@ function renderHistory() {
     `).join('');
 }
 
+// 履歴読み込み：保存されたHSインデックスを復元するように修正
 function loadHistory(id) {
     const item = history.find(h => h.id === id);
     if (!item) return;
+
     document.getElementById('targetMidori').value = item.midori;
     document.getElementById('baseSud').value = item.baseSud;
     document.getElementById('bpm').value = item.bpm;
-    setPlatform(item.platform);
+    
+    // プラットフォームとリストの復元
+    currentPlatform = item.platform;
+    updateVersionList(item.platform);
     document.getElementById('version').value = item.verIdx;
+    
+    // ★ここを追加：HSの選択状態を復元
+    manualHSIdx = item.manualHSIdx || 0; 
+    
     calc();
 }
 
 function deleteHistory(id) {
     history = history.filter(h => h.id !== id);
+    localStorage.setItem('iidx_history', JSON.stringify(history));
     renderHistory();
 }
 
-window.onload = () => setPlatform('AC');
+// ページ読み込み時の初期化
+window.onload = () => {
+    // 1. まずプラットフォームをセット（まだ計算はしない）
+    currentPlatform = 'AC';
+    updateVersionList('AC'); 
+
+    // 2. ブラウザから保存データを取得
+    const savedMidori = localStorage.getItem('iidx_cfg_midori');
+    const savedBaseSud = localStorage.getItem('iidx_cfg_basesud');
+    const savedHistory = localStorage.getItem('iidx_history');
+
+    // 3. 取得したデータを入力欄に反映
+    if (savedMidori) document.getElementById('targetMidori').value = savedMidori;
+    if (savedBaseSud) document.getElementById('baseSud').value = savedBaseSud;
+    if (savedHistory) {
+        history = JSON.parse(savedHistory);
+        renderHistory();
+    }
+
+    // 4. 全て準備が整ってから初めて計算を実行
+    calc();
+};
+
+// setPlatformの中身も少し整理して、初期化時にループしないようにします
+function setPlatform(p) {
+    currentPlatform = p;
+    updateVersionList(p);
+    calc();
+}
+
+// バージョンリストの更新だけを切り分け
+function updateVersionList(p) {
+    const root = document.documentElement;
+    root.style.setProperty('--theme-color', p === 'AC' ? '#86cecb' : '#ce8689');
+    document.getElementById('btnAC').classList.toggle('active', p === 'AC');
+    document.getElementById('btnCS').classList.toggle('active', p === 'CS');
+    
+    const verSelect = document.getElementById('version');
+    verSelect.innerHTML = "";
+    hsData[p].forEach((v, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx; 
+        opt.innerText = v.name;
+        verSelect.appendChild(opt);
+    });
+    verSelect.selectedIndex = hsData[p].length - 1;
+    resetManualHS();
+}
 </script>
 </body>
 </html>
